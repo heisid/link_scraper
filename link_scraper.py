@@ -13,11 +13,12 @@ class LinkParser(HTMLParser):
         super().__init__()
         self.linklist = list()
         self._a_tag_active = False
+        self._theres_text_inside_a = False
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'a':
-            attrs = dict(attrs)
-            if 'href' in attrs:
+        attrs = dict(attrs)
+        if tag == 'a' and 'href' in attrs:
+            if attrs['href'].startswith('http'):
                 self._a_tag_active = True
                 linkurl = attrs['href']
                 self.linklist.append([])
@@ -26,9 +27,15 @@ class LinkParser(HTMLParser):
     def handle_endtag(self, tag):
         if tag == 'a':
             self._a_tag_active = False
+            # I KNOW I KNOW, this is idiot... I'm an amateur, man! Forgive me, my brain is foggy right now.
+            if not self._theres_text_inside_a:
+                self.linklist[-1].append(self.linklist[-1][0])
+            # reset the stupid flag
+            self._theres_text_inside_a = False
 
     def handle_data(self, text):
         if self._a_tag_active:
+            self._theres_text_inside_a = True
             self.linklist[-1].append(text)
             self.linklist[-1].reverse()
         else:
@@ -40,6 +47,7 @@ class LinkParser(HTMLParser):
 def markdown_formatter(linklist):
     md = ''
     for l in linklist:
+        print(l)
         md = md + '* [{caption}]({link})\n'.format(caption=l[0], link=l[1])
     return md
 
