@@ -7,6 +7,10 @@
 
 from html.parser import HTMLParser
 import re
+from sys import argv
+import requests
+from requests.exceptions import HTTPError
+
 
 class LinkParser(HTMLParser):
     def __init__(self):
@@ -47,19 +51,22 @@ class LinkParser(HTMLParser):
 def markdown_formatter(linklist):
     md = ''
     for l in linklist:
-        print(l)
         md = md + '* [{caption}]({link})\n'.format(caption=l[0], link=l[1])
     return md
 
 if __name__ == '__main__':
-    from sys import argv
-
     if len(argv) != 3:
-        print('Usage: {} html_input_file markdown_output_file'.format(argv[0]))
+        print('Usage: {} html_input_file_or_url markdown_output_file'.format(argv[0]))
         exit(1)
+    
+    inputfile_or_url = argv[1]
 
-    with open(argv[1], 'r') as inputfile:
-        inputtext = inputfile.read()
+    if inputfile_or_url.startswith('http'):
+        http_response = requests.get(inputfile_or_url)
+        inputtext = str(http_response.content)
+    else:
+        with open(inputfile_or_url, 'r') as inputfile:
+            inputtext = inputfile.read()
 
     parser = LinkParser()
     parser.feed(inputtext)
